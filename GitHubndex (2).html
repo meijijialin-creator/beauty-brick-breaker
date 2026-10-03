@@ -1,0 +1,1799 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Beauty Brick Breaker – Beauty Lab</title>
+<meta name="description" content="Beauty Brick Breaker – a cosmetics-themed brick breaker game by Beauty Lab." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Italiana&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+<style>
+/* =========================================================
+   1. DESIGN TOKENS
+   Porcelain ivory, nude, dusty rose, beige, cocoa brown, ink
+   ========================================================= */
+:root {
+  --porcelain: #F6F0EA;
+  --cream: #EFE4D8;
+  --nude: #E6CFC4;
+  --rose: #B88A86;
+  --beige: #D9C6AE;
+  --cocoa: #6B4E42;
+  --ink: #1C1615;
+  --ink-soft: #4A3B35;
+  --line: rgba(107, 78, 66, 0.18);
+  --glass: rgba(255, 252, 248, 0.62);
+
+  --font-display: "Italiana", "Didot", "Bodoni 72", "Times New Roman", serif;
+  --font-body: "Jost", "Pretendard", "Apple SD Gothic Neo", "Noto Sans KR", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+
+  --radius-lg: 22px;
+  --radius-md: 14px;
+  --radius-pill: 999px;
+  --shadow: 0 18px 40px -24px rgba(74, 52, 43, 0.45);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body { margin: 0; padding: 0; }
+
+body {
+  min-height: 100vh;
+  font-family: var(--font-body);
+  font-weight: 400;
+  color: var(--ink);
+  background-color: var(--porcelain);
+  /* Very soft powder texture: two faint radial washes + fine grain */
+  background-image:
+    radial-gradient(1200px 600px at 85% -10%, rgba(230, 207, 196, 0.55), transparent 60%),
+    radial-gradient(900px 500px at -10% 110%, rgba(217, 198, 174, 0.45), transparent 60%),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.42  0 0 0 0 0.31  0 0 0 0 0.26  0 0 0 0.05 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  -webkit-font-smoothing: antialiased;
+}
+
+button, input { font-family: inherit; }
+
+:focus-visible {
+  outline: 2px solid var(--rose);
+  outline-offset: 3px;
+}
+
+/* =========================================================
+   2. HEADER
+   ========================================================= */
+.site-header {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 28px 28px 8px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.brand { display: flex; flex-direction: column; gap: 2px; }
+
+.brand-lab {
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 13px;
+  letter-spacing: 0.32em;
+  color: var(--rose);
+}
+
+.brand-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(34px, 5.4vw, 64px);
+  line-height: 1;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+.brand-tagline {
+  margin: 10px 0 0;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--ink-soft);
+  max-width: 52ch;
+}
+
+/* Language selector – segmented pill */
+.lang-switch {
+  display: inline-flex;
+  padding: 4px;
+  border-radius: var(--radius-pill);
+  background: var(--glass);
+  border: 1px solid var(--line);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: var(--shadow);
+  flex-shrink: 0;
+}
+
+.lang-switch button {
+  border: 0;
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 8px 14px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.lang-switch button:hover { color: var(--ink); }
+
+.lang-switch button[aria-pressed="true"] {
+  background: var(--ink);
+  color: var(--porcelain);
+}
+
+/* =========================================================
+   3. MAIN LAYOUT
+   ========================================================= */
+.layout {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 18px 28px 40px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 28px;
+  align-items: start;
+}
+
+/* ---------- HUD ---------- */
+.hud {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding: 14px 18px;
+  margin-bottom: 14px;
+  border-radius: var(--radius-lg);
+  background: var(--glass);
+  border: 1px solid var(--line);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.hud-stats { display: flex; gap: 28px; flex-wrap: wrap; }
+
+.stat { display: flex; flex-direction: column; gap: 2px; min-width: 60px; }
+
+.stat-label {
+  font-size: 12px;
+  color: var(--rose);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+}
+
+.stat-value {
+  font-family: var(--font-display);
+  font-size: 26px;
+  line-height: 1.1;
+  color: var(--ink);
+  max-width: 12ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lives-dots { display: flex; gap: 6px; align-items: center; height: 29px; }
+
+.lives-dots span {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff, var(--nude) 60%, var(--rose));
+  box-shadow: 0 1px 2px rgba(74, 52, 43, 0.3);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.lives-dots span.lost { opacity: 0.18; transform: scale(0.8); }
+
+.hud-actions { display: flex; gap: 8px; }
+
+/* ---------- Buttons ---------- */
+.btn {
+  border: 1px solid var(--ink);
+  background: var(--ink);
+  color: var(--porcelain);
+  font-size: 14px;
+  font-weight: 500;
+  padding: 11px 22px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.15s ease;
+}
+
+.btn:hover { background: var(--cocoa); border-color: var(--cocoa); }
+.btn:active { transform: translateY(1px); }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--ink);
+  border-color: var(--line);
+}
+
+.btn-ghost:hover { background: var(--cream); color: var(--ink); border-color: var(--beige); }
+
+/* ---------- Game stage ---------- */
+.stage {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--line);
+  box-shadow: 0 30px 60px -36px rgba(74, 52, 43, 0.55);
+  background: var(--cream);
+}
+
+#gameCanvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;          /* smooth touch dragging on phones */
+  cursor: none;
+}
+
+/* ---------- Overlays (welcome / result) ---------- */
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(246, 240, 234, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  transition: opacity 0.35s ease;
+}
+
+.overlay.hidden { opacity: 0; pointer-events: none; }
+
+.panel {
+  width: min(440px, 100%);
+  max-height: 100%;
+  overflow-y: auto;
+  padding: 30px 30px 26px;
+  border-radius: var(--radius-lg);
+  background: rgba(255, 252, 248, 0.86);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  text-align: left;
+}
+
+.panel h2 {
+  margin: 0 0 6px;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(28px, 4vw, 38px);
+  line-height: 1.1;
+}
+
+.panel p { margin: 0 0 18px; color: var(--ink-soft); line-height: 1.6; font-size: 15px; }
+
+.field-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--cocoa);
+  margin-bottom: 8px;
+}
+
+.name-input {
+  width: 100%;
+  padding: 13px 16px;
+  font-size: 16px;               /* 16px avoids iOS auto-zoom */
+  border-radius: var(--radius-md);
+  border: 1px solid var(--beige);
+  background: #FFFCF8;
+  color: var(--ink);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.name-input:focus { outline: none; border-color: var(--rose); box-shadow: 0 0 0 3px rgba(184, 138, 134, 0.22); }
+
+.field-error {
+  min-height: 20px;
+  margin: 6px 0 10px;
+  font-size: 13px;
+  color: #9A4A44;
+}
+
+.controls {
+  margin: 20px 0 0;
+  padding: 16px 0 0;
+  border-top: 1px solid var(--line);
+  list-style: none;
+}
+
+.controls li.controls-title::before { display: none; }
+.controls-title { font-size: 13px; font-weight: 500; color: var(--cocoa); margin-bottom: 8px; }
+
+.controls li {
+  font-size: 14px;
+  color: var(--ink-soft);
+  line-height: 1.55;
+  padding: 3px 0 3px 18px;
+  position: relative;
+}
+
+.controls li::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 11px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--rose);
+}
+
+.kbd {
+  display: inline-block;
+  min-width: 22px;
+  padding: 0 6px;
+  border: 1px solid var(--beige);
+  border-bottom-width: 2px;
+  border-radius: 6px;
+  font-size: 12px;
+  text-align: center;
+  background: #FFFCF8;
+  color: var(--ink);
+}
+
+.result-score {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  margin: 8px 0 6px;
+}
+
+.result-score .label { font-size: 13px; color: var(--rose); font-weight: 500; }
+
+.result-score .value {
+  font-family: var(--font-display);
+  font-size: 56px;
+  line-height: 1;
+  color: var(--ink);
+}
+
+.save-status { font-size: 13px; color: var(--cocoa); min-height: 20px; margin-bottom: 16px; }
+
+.panel-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+/* =========================================================
+   4. RANKING PANEL
+   ========================================================= */
+.ranking {
+  padding: 24px 22px 20px;
+  border-radius: var(--radius-lg);
+  background: var(--glass);
+  border: 1px solid var(--line);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: var(--shadow);
+}
+
+.ranking-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+
+.ranking h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 34px;
+  line-height: 1;
+}
+
+.mode-badge {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--line);
+  color: var(--cocoa);
+  white-space: nowrap;
+}
+
+.mode-badge.online { background: var(--ink); color: var(--porcelain); border-color: var(--ink); }
+
+.ranking-desc { margin: 10px 0 16px; font-size: 13px; line-height: 1.55; color: var(--ink-soft); }
+
+.rank-table { width: 100%; border-collapse: collapse; }
+
+.rank-table th {
+  text-align: left;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--rose);
+  padding: 0 4px 8px;
+  border-bottom: 1px solid var(--line);
+}
+
+.rank-table th:last-child, .rank-table td:last-child { text-align: right; }
+
+.rank-table td {
+  padding: 10px 4px;
+  font-size: 14px;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink);
+}
+
+.rank-table tr:last-child td { border-bottom: 0; }
+
+.rank-no { font-family: var(--font-display); font-size: 18px; width: 44px; color: var(--cocoa); }
+
+.rank-name {
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+.rank-score { font-family: var(--font-display); font-size: 20px; }
+
+/* Top 3: quiet emphasis – a small swatch of the product tones */
+.rank-table tr.top td { background: rgba(230, 207, 196, 0.28); }
+.rank-table tr.top .rank-no::after {
+  content: "";
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-left: 6px;
+  border-radius: 50%;
+  vertical-align: middle;
+}
+.rank-table tr.top-1 .rank-no::after { background: var(--ink); }
+.rank-table tr.top-2 .rank-no::after { background: var(--cocoa); }
+.rank-table tr.top-3 .rank-no::after { background: var(--rose); }
+
+.rank-table tr.me td { color: var(--cocoa); }
+
+.empty-state { padding: 26px 4px; font-size: 14px; color: var(--ink-soft); text-align: center; }
+
+/* =========================================================
+   5. FOOTER
+   ========================================================= */
+.site-footer {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 28px 34px;
+  font-size: 13px;
+  color: var(--cocoa);
+  opacity: 0.8;
+}
+
+/* =========================================================
+   6. RESPONSIVE
+   ========================================================= */
+@media (max-width: 920px) {
+  .layout { grid-template-columns: 1fr; }   /* ranking moves under the game */
+}
+
+@media (max-width: 560px) {
+  .site-header { flex-direction: column-reverse; padding: 18px 16px 4px; }
+  .lang-switch { align-self: flex-end; }
+  .layout { padding: 12px 12px 28px; gap: 18px; }
+  .hud { padding: 12px 14px; }
+  .hud-stats { gap: 18px; }
+  .stat-value { font-size: 22px; }
+  .btn { padding: 10px 16px; font-size: 13px; }
+  .panel { padding: 22px 20px 20px; }
+  .panel p { margin-bottom: 12px; }
+  .controls { margin-top: 14px; padding-top: 12px; }
+  .stage { aspect-ratio: 4 / 3.4; }
+  .site-footer { padding: 0 16px 24px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+}
+</style>
+</head>
+
+<body>
+
+<!-- ===================== HEADER ===================== -->
+<header class="site-header">
+  <div class="brand">
+    <span class="brand-lab">Beauty Lab</span>
+    <h1 class="brand-title">Beauty Brick Breaker</h1>
+    <p class="brand-tagline" data-i18n="tagline"></p>
+  </div>
+
+  <!-- Language selector (top right) -->
+  <div class="lang-switch" role="group" aria-label="Language">
+    <button type="button" data-lang="ko" aria-pressed="true">한국어</button>
+    <button type="button" data-lang="en" aria-pressed="false">English</button>
+    <button type="button" data-lang="zh" aria-pressed="false">中文</button>
+  </div>
+</header>
+
+<!-- ===================== MAIN ===================== -->
+<main class="layout">
+
+  <!-- Game column -->
+  <section aria-label="Game">
+    <div class="hud">
+      <div class="hud-stats">
+        <div class="stat">
+          <span class="stat-label" data-i18n="player"></span>
+          <span class="stat-value" id="hudPlayer">–</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label" data-i18n="score"></span>
+          <span class="stat-value" id="hudScore">0</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label" data-i18n="lives"></span>
+          <div class="lives-dots" id="hudLives" aria-live="polite"></div>
+        </div>
+      </div>
+      <div class="hud-actions">
+        <button type="button" class="btn" id="btnStartHud" data-i18n="startGame"></button>
+        <button type="button" class="btn btn-ghost" id="btnRestart" data-i18n="restart"></button>
+      </div>
+    </div>
+
+    <div class="stage" id="stage">
+      <canvas id="gameCanvas" aria-label="Beauty Brick Breaker game area"></canvas>
+
+      <!-- Welcome / name entry overlay -->
+      <div class="overlay" id="welcomeOverlay">
+        <div class="panel">
+          <h2 data-i18n="welcomeTitle"></h2>
+          <p data-i18n="welcomeDesc"></p>
+
+          <label class="field-label" for="nameInput" data-i18n="nameLabel"></label>
+          <input class="name-input" id="nameInput" type="text" maxlength="12" autocomplete="nickname"
+                 data-i18n-placeholder="namePlaceholder" />
+          <div class="field-error" id="nameError" role="alert"></div>
+
+          <button type="button" class="btn" id="btnStart" data-i18n="startGame"></button>
+
+          <ul class="controls">
+            <li class="controls-title" style="padding-left:0" data-i18n="controlsTitle"></li>
+            <li><span class="kbd">←</span> <span class="kbd">→</span> / <span class="kbd">A</span> <span class="kbd">D</span>&nbsp; <span data-i18n="ctrlKeys"></span></li>
+            <li data-i18n="ctrlPointer"></li>
+            <li><span class="kbd">Space</span>&nbsp; <span data-i18n="ctrlLaunch"></span></li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Result overlay (Game Over / Win) -->
+      <div class="overlay hidden" id="resultOverlay">
+        <div class="panel">
+          <h2 id="resultTitle" data-i18n="gameOverTitle"></h2>
+          <p id="resultMsg" data-i18n="gameOverMsg"></p>
+          <div class="result-score">
+            <span class="label" data-i18n="finalScore"></span>
+            <span class="value" id="resultScore">0</span>
+          </div>
+          <div class="save-status" id="saveStatus" aria-live="polite"></div>
+          <div class="panel-actions">
+            <button type="button" class="btn" id="btnPlayAgain" data-i18n="playAgain"></button>
+            <button type="button" class="btn btn-ghost" id="btnChangePlayer" data-i18n="changePlayer"></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Ranking column -->
+  <aside class="ranking" aria-labelledby="rankingTitle">
+    <div class="ranking-head">
+      <h2 id="rankingTitle" data-i18n="top10"></h2>
+      <span class="mode-badge" id="modeBadge" data-i18n="modeLocal"></span>
+    </div>
+    <p class="ranking-desc" id="rankingDesc" data-i18n="rankingLocal"></p>
+
+    <table class="rank-table">
+      <thead>
+        <tr>
+          <th data-i18n="colRank"></th>
+          <th data-i18n="colPlayer"></th>
+          <th data-i18n="colScore"></th>
+        </tr>
+      </thead>
+      <tbody id="rankBody"></tbody>
+    </table>
+    <div class="empty-state" id="rankEmpty" data-i18n="noScores"></div>
+  </aside>
+</main>
+
+<footer class="site-footer" data-i18n="footer"></footer>
+
+<!-- Firebase SDK is loaded dynamically by the script below ONLY when firebaseConfig is filled in. -->
+
+<script>
+"use strict";
+
+/* =========================================================================
+   ★★★ 在这里填写Firebase配置 ★★★
+   (Fill in your Firebase config here / 여기에 Firebase 설정을 입력하세요)
+
+   Firebase Console → Project settings → Your apps → SDK setup and configuration
+   只要还保留 "YOUR_..." 占位符，游戏就会自动使用 localStorage 排行榜。
+
+   建议的 Realtime Database 规则 (Rules)：
+   {
+     "rules": {
+       "leaderboard": {
+         ".read": true,
+         ".indexOn": ["score"],
+         "$entry": {
+           ".write": "!data.exists()",
+           ".validate": "newData.hasChildren(['playerName','score','timestamp'])
+                          && newData.child('playerName').isString()
+                          && newData.child('playerName').val().length <= 12
+                          && newData.child('score').isNumber()
+                          && newData.child('score').val() >= 0
+                          && newData.child('score').val() <= 100000
+                          && newData.child('timestamp').isNumber()"
+         }
+       }
+     }
+   }
+
+   数据结构 (Database structure)：
+   leaderboard/
+     -NxAbc123 : { playerName: "JIALIN", score: 580, timestamp: 1759450000000 }
+   ========================================================================= */
+const firebaseConfig = {
+  apiKey: "AIzaSyBuj2M6ee48b1GbXhNYdvNpNLGltfRhraE",
+  authDomain: "beauty-brick-breaker-jialin.firebaseapp.com",
+  databaseURL: "https://beauty-brick-breaker-jialin-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "beauty-brick-breaker-jialin",
+  storageBucket: "beauty-brick-breaker-jialin.firebasestorage.app",
+  messagingSenderId: "835711919573",
+  appId: "1:835711919573:web:34a8c3f4cb471ab28a895c"
+};
+
+/* =========================================================================
+   1. I18N DICTIONARY (한국어 / English / 中文)
+   ========================================================================= */
+const I18N = {
+  ko: {
+    tagline: "공을 튕겨 뷰티 선반 위의 제품을 하나씩 비워 보세요.",
+    player: "플레이어",
+    score: "점수",
+    lives: "라이프",
+    startGame: "게임 시작",
+    restart: "다시 시작",
+    welcomeTitle: "뷰티 랩에 오신 걸 환영해요",
+    welcomeDesc: "이름을 입력하고 게임을 시작하세요. 기록은 TOP 10 랭킹에 저장됩니다.",
+    nameLabel: "플레이어 이름",
+    namePlaceholder: "이름을 입력하세요 (최대 12자)",
+    nameError: "이름을 입력해 주세요.",
+    controlsTitle: "조작 방법",
+    ctrlKeys: "키로 패들 이동",
+    ctrlPointer: "마우스를 움직이거나 화면을 드래그해서 패들 이동",
+    ctrlLaunch: "스페이스바, 클릭 또는 탭으로 공 발사",
+    launchHint: "스페이스바를 누르거나 화면을 탭하면 공이 발사돼요",
+    lifeLost: "라이프가 하나 줄었어요",
+    gameOverTitle: "게임 오버",
+    gameOverMsg: "아쉽게도 라이프를 모두 사용했어요. 다시 도전해 보세요!",
+    winTitle: "클리어!",
+    winMsg: "선반 위의 모든 뷰티 제품을 비웠어요. 멋진 플레이예요!",
+    finalScore: "최종 점수",
+    playAgain: "다시 플레이",
+    changePlayer: "플레이어 변경",
+    saving: "점수를 저장하는 중…",
+    savedOnline: "온라인 랭킹에 점수가 저장되었어요.",
+    savedLocal: "이 기기에 점수가 저장되었어요.",
+    saveFallback: "온라인 저장에 실패해 이 기기에 저장했어요.",
+    top10: "Top 10",
+    modeLocal: "이 기기",
+    modeOnline: "온라인",
+    rankingLocal: "이 기기에 저장된 상위 10개 기록이에요. Firebase를 연결하면 온라인 랭킹으로 바뀝니다.",
+    rankingOnline: "모든 플레이어의 온라인 기록 중 상위 10개예요.",
+    colRank: "순위",
+    colPlayer: "플레이어",
+    colScore: "점수",
+    noScores: "아직 등록된 점수가 없습니다.",
+    loading: "랭킹을 불러오는 중…",
+    shelfTitle: "The Beauty Shelf",
+    footer: "Beauty Design & Management 전공 과제 작품 · Beauty Lab"
+  },
+  en: {
+    tagline: "Bounce the pearl and clear every product from the beauty shelf.",
+    player: "Player",
+    score: "Score",
+    lives: "Lives",
+    startGame: "Start Game",
+    restart: "Restart",
+    welcomeTitle: "Welcome to Beauty Lab",
+    welcomeDesc: "Enter your name to begin. Your score will be saved to the Top 10 ranking.",
+    nameLabel: "Player name",
+    namePlaceholder: "Your name (up to 12 characters)",
+    nameError: "Please enter your name.",
+    controlsTitle: "How to play",
+    ctrlKeys: "move the paddle",
+    ctrlPointer: "Move your mouse or drag on the screen to move the paddle",
+    ctrlLaunch: "Press Space, click or tap to launch the ball",
+    launchHint: "Press Space or tap the screen to launch",
+    lifeLost: "You lost a life",
+    gameOverTitle: "Game Over",
+    gameOverMsg: "You're out of lives. Give it another try!",
+    winTitle: "Shelf Cleared!",
+    winMsg: "Every product is off the shelf. Beautifully played!",
+    finalScore: "Final score",
+    playAgain: "Play Again",
+    changePlayer: "Change Player",
+    saving: "Saving your score…",
+    savedOnline: "Score saved to the online ranking.",
+    savedLocal: "Score saved on this device.",
+    saveFallback: "Online save failed, so the score was saved on this device.",
+    top10: "Top 10",
+    modeLocal: "This device",
+    modeOnline: "Online",
+    rankingLocal: "The 10 best scores saved on this device. Connect Firebase to switch to an online ranking.",
+    rankingOnline: "The 10 best scores from all players online.",
+    colRank: "Rank",
+    colPlayer: "Player",
+    colScore: "Score",
+    noScores: "No scores yet.",
+    loading: "Loading ranking…",
+    shelfTitle: "The Beauty Shelf",
+    footer: "A Beauty Design & Management course project · Beauty Lab"
+  },
+  zh: {
+    tagline: "弹起珍珠球，把美妆货架上的产品一件件清空。",
+    player: "玩家",
+    score: "分数",
+    lives: "生命",
+    startGame: "开始游戏",
+    restart: "重新开始",
+    welcomeTitle: "欢迎来到 Beauty Lab",
+    welcomeDesc: "输入你的名字即可开始游戏，成绩将记录到 Top 10 排行榜。",
+    nameLabel: "玩家姓名",
+    namePlaceholder: "请输入名字（最多 12 个字符）",
+    nameError: "请输入你的名字。",
+    controlsTitle: "操作说明",
+    ctrlKeys: "移动挡板",
+    ctrlPointer: "移动鼠标或在屏幕上拖动来移动挡板",
+    ctrlLaunch: "按空格键、点击或轻触屏幕发射小球",
+    launchHint: "按空格键或轻触屏幕发射小球",
+    lifeLost: "失去一条生命",
+    gameOverTitle: "游戏结束",
+    gameOverMsg: "生命已用完，再挑战一次吧！",
+    winTitle: "游戏胜利！",
+    winMsg: "货架上的美妆产品已全部清空，表现出色！",
+    finalScore: "最终分数",
+    playAgain: "再玩一次",
+    changePlayer: "更换玩家",
+    saving: "正在保存成绩…",
+    savedOnline: "成绩已保存到在线排行榜。",
+    savedLocal: "成绩已保存在本设备。",
+    saveFallback: "在线保存失败，成绩已保存在本设备。",
+    top10: "Top 10",
+    modeLocal: "本设备",
+    modeOnline: "在线",
+    rankingLocal: "本设备保存的前 10 名成绩。连接 Firebase 后将切换为在线排行榜。",
+    rankingOnline: "所有玩家在线成绩的前 10 名。",
+    colRank: "排名",
+    colPlayer: "玩家",
+    colScore: "分数",
+    noScores: "暂无成绩记录。",
+    loading: "正在加载排行榜…",
+    shelfTitle: "The Beauty Shelf",
+    footer: "Beauty Design & Management 专业课程作品 · Beauty Lab"
+  }
+};
+
+const LANG_KEY = "bbb_lang";
+const LAST_NAME_KEY = "bbb_last_name";
+const LOCAL_BOARD_KEY = "bbb_leaderboard";
+
+let currentLang = "ko";
+
+/* Safe localStorage helpers (private mode / blocked storage never breaks the game) */
+function storageGet(key) {
+  try { return window.localStorage.getItem(key); } catch (e) { return null; }
+}
+function storageSet(key, value) {
+  try { window.localStorage.setItem(key, value); } catch (e) { /* ignore */ }
+}
+
+function t(key) {
+  const dict = I18N[currentLang] || I18N.ko;
+  return dict[key] !== undefined ? dict[key] : (I18N.en[key] || key);
+}
+
+/* Apply translations to every element with data-i18n / data-i18n-placeholder */
+function applyLanguage(lang) {
+  if (!I18N[lang]) lang = "ko";
+  currentLang = lang;
+  storageSet(LANG_KEY, lang);
+
+  document.documentElement.lang = lang === "zh" ? "zh-CN" : lang;
+
+  document.querySelectorAll("[data-i18n]").forEach(function (el) {
+    el.textContent = t(el.dataset.i18n);
+  });
+  document.querySelectorAll("[data-i18n-placeholder]").forEach(function (el) {
+    el.placeholder = t(el.dataset.i18nPlaceholder);
+  });
+  document.querySelectorAll(".lang-switch button").forEach(function (btn) {
+    btn.setAttribute("aria-pressed", btn.dataset.lang === lang ? "true" : "false");
+  });
+
+  // If a name error is currently visible, translate it too
+  if (nameError.textContent) nameError.textContent = t("nameError");
+}
+
+/* =========================================================================
+   2. DOM REFERENCES
+   ========================================================================= */
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+const welcomeOverlay = document.getElementById("welcomeOverlay");
+const resultOverlay = document.getElementById("resultOverlay");
+const nameInput = document.getElementById("nameInput");
+const nameError = document.getElementById("nameError");
+const hudPlayer = document.getElementById("hudPlayer");
+const hudScore = document.getElementById("hudScore");
+const hudLives = document.getElementById("hudLives");
+const resultTitle = document.getElementById("resultTitle");
+const resultMsg = document.getElementById("resultMsg");
+const resultScore = document.getElementById("resultScore");
+const saveStatus = document.getElementById("saveStatus");
+const rankBody = document.getElementById("rankBody");
+const rankEmpty = document.getElementById("rankEmpty");
+const rankingDesc = document.getElementById("rankingDesc");
+const modeBadge = document.getElementById("modeBadge");
+
+/* =========================================================================
+   3. GAME CONSTANTS
+   Internal game coordinates are always 800 x 600.
+   The canvas is scaled by CSS, so gameplay stays identical on every screen.
+   ========================================================================= */
+const W = 800;
+const H = 600;
+const MAX_LIVES = 3;
+
+const PRODUCTS = ["SERUM", "CREAM", "LIP", "MIST", "MASK", "GLOW", "TONE", "CARE"];
+
+/* One tone per shelf (top shelf = most valuable) */
+const SHELVES = [
+  { fill: "#2A201D", text: "#F2E7DC", cap: "#B88A86", points: 50 },
+  { fill: "#6B4E42", text: "#F6EDE4", cap: "#E6CFC4", points: 40 },
+  { fill: "#B88A86", text: "#FFF8F2", cap: "#6B4E42", points: 30 },
+  { fill: "#E6CFC4", text: "#4A3B35", cap: "#B88A86", points: 20 },
+  { fill: "#FBF6F0", text: "#4A3B35", cap: "#D9C6AE", points: 10 }
+];
+
+const COLS = 8;
+const ROWS = SHELVES.length;
+const BRICK_W = 80;
+const BRICK_H = 36;
+const BRICK_GAP_X = 11;
+const BRICK_GAP_Y = 18;
+const BRICK_TOP = 88;
+const BRICK_LEFT = (W - (COLS * BRICK_W + (COLS - 1) * BRICK_GAP_X)) / 2;
+
+const PADDLE_W = 120;
+const PADDLE_H = 14;
+const PADDLE_Y = H - 42;
+const PADDLE_KEY_SPEED = 640;      // px per second
+
+const BALL_R = 8;
+const BALL_BASE_SPEED = 360;       // px per second
+const BALL_MAX_SPEED = 560;
+const BALL_SPEEDUP = 4;            // added per brick
+
+/* =========================================================================
+   4. GAME STATE
+   state: "idle"   – waiting for player name
+          "ready"  – ball resting on paddle, waiting for launch
+          "playing"
+          "over"   – lost
+          "win"
+   ========================================================================= */
+const game = {
+  state: "idle",
+  playerName: "",
+  score: 0,
+  lives: MAX_LIVES,
+  bricks: [],
+  fading: [],          // bricks playing their disappear animation
+  messageTimer: 0,     // short on-canvas message after losing a life
+  scoreSaved: false
+};
+
+const paddle = { x: (W - PADDLE_W) / 2, y: PADDLE_Y, w: PADDLE_W, h: PADDLE_H };
+const ball = { x: W / 2, y: PADDLE_Y - BALL_R - 1, r: BALL_R, vx: 0, vy: 0, speed: BALL_BASE_SPEED };
+const keys = { left: false, right: false };
+
+/* =========================================================================
+   5. CANVAS SETUP (crisp on high-DPI screens)
+   ========================================================================= */
+function setupCanvas() {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+
+/* =========================================================================
+   6. GAME SETUP / RESET
+   ========================================================================= */
+function buildBricks() {
+  game.bricks = [];
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      game.bricks.push({
+        x: BRICK_LEFT + c * (BRICK_W + BRICK_GAP_X),
+        y: BRICK_TOP + r * (BRICK_H + BRICK_GAP_Y),
+        w: BRICK_W,
+        h: BRICK_H,
+        row: r,
+        product: PRODUCTS[(c + r * 3) % PRODUCTS.length],
+        alive: true
+      });
+    }
+  }
+}
+
+function placeBallOnPaddle() {
+  ball.x = paddle.x + paddle.w / 2;
+  ball.y = paddle.y - ball.r - 1;
+  ball.vx = 0;
+  ball.vy = 0;
+}
+
+/* Fully resets everything for a new round (same player) */
+function resetGame() {
+  game.score = 0;
+  game.lives = MAX_LIVES;
+  game.fading = [];
+  game.messageTimer = 0;
+  game.scoreSaved = false;
+  keys.left = keys.right = false;
+  ball.speed = BALL_BASE_SPEED;
+  paddle.x = (W - paddle.w) / 2;
+  buildBricks();
+  placeBallOnPaddle();
+  game.state = "ready";
+  hideOverlay(resultOverlay);
+  hideOverlay(welcomeOverlay);
+  updateHUD();
+}
+
+function launchBall() {
+  if (game.state !== "ready") return;
+  const angle = (Math.random() * 0.6 - 0.3);           // slight random angle
+  ball.vx = ball.speed * Math.sin(angle);
+  ball.vy = -ball.speed * Math.cos(angle);
+  game.state = "playing";
+  game.messageTimer = 0;
+}
+
+/* =========================================================================
+   7. HUD
+   ========================================================================= */
+function updateHUD() {
+  hudPlayer.textContent = game.playerName || "–";       // textContent = safe
+  hudScore.textContent = String(game.score);
+  hudLives.replaceChildren();
+  for (let i = 0; i < MAX_LIVES; i++) {
+    const dot = document.createElement("span");
+    if (i >= game.lives) dot.className = "lost";
+    hudLives.appendChild(dot);
+  }
+  hudLives.setAttribute("aria-label", t("lives") + ": " + game.lives);
+}
+
+/* =========================================================================
+   8. PHYSICS & COLLISION
+   The ball moves in small sub-steps every frame (max ~4px each), so it can
+   never tunnel through a brick or the paddle even at top speed.
+   ========================================================================= */
+function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+
+/* Keep the ball speed constant and never let it travel almost horizontally */
+function normalizeVelocity() {
+  const minVy = ball.speed * 0.32;
+  let vy = ball.vy;
+  if (Math.abs(vy) < minVy) vy = (vy < 0 ? -1 : 1) * minVy;
+  let vx = ball.vx;
+  const vxMag = Math.sqrt(Math.max(ball.speed * ball.speed - vy * vy, 0));
+  vx = (vx < 0 ? -1 : 1) * vxMag;
+  ball.vx = vx;
+  ball.vy = vy;
+}
+
+function updatePaddle(dt) {
+  let dir = 0;
+  if (keys.left) dir -= 1;
+  if (keys.right) dir += 1;
+  if (dir !== 0) paddle.x += dir * PADDLE_KEY_SPEED * dt;
+  paddle.x = clamp(paddle.x, 0, W - paddle.w);
+}
+
+function updateBall(dt) {
+  const distance = ball.speed * dt;
+  const steps = Math.max(1, Math.ceil(distance / 4));
+  const sdt = dt / steps;
+
+  for (let i = 0; i < steps; i++) {
+    ball.x += ball.vx * sdt;
+    ball.y += ball.vy * sdt;
+
+    // --- Walls (direction is set, not toggled, so the ball can't stick) ---
+    if (ball.x - ball.r < 0) { ball.x = ball.r; ball.vx = Math.abs(ball.vx); }
+    if (ball.x + ball.r > W) { ball.x = W - ball.r; ball.vx = -Math.abs(ball.vx); }
+    if (ball.y - ball.r < 0) { ball.y = ball.r; ball.vy = Math.abs(ball.vy); }
+
+    // --- Paddle (only when moving downwards) ---
+    if (ball.vy > 0 &&
+        ball.y + ball.r >= paddle.y &&
+        ball.y - ball.r <= paddle.y + paddle.h &&
+        ball.x + ball.r >= paddle.x &&
+        ball.x - ball.r <= paddle.x + paddle.w) {
+      // Where on the paddle did it hit? -1 (left edge) … 1 (right edge)
+      const hit = clamp((ball.x - (paddle.x + paddle.w / 2)) / (paddle.w / 2), -1, 1);
+      const angle = hit * (Math.PI / 3);                 // max 60°
+      ball.vx = ball.speed * Math.sin(angle);
+      ball.vy = -ball.speed * Math.cos(angle);
+      ball.y = paddle.y - ball.r - 0.5;
+      normalizeVelocity();
+    }
+
+    // --- Bricks (one brick per sub-step) ---
+    if (hitBrick()) {
+      if (remainingBricks() === 0) {
+        endGame(true);
+        return;
+      }
+    }
+
+    // --- Fell below the screen ---
+    if (ball.y - ball.r > H) {
+      loseLife();
+      return;
+    }
+  }
+}
+
+/* Circle vs rectangle collision with correct side detection */
+function hitBrick() {
+  for (let i = 0; i < game.bricks.length; i++) {
+    const b = game.bricks[i];
+    if (!b.alive) continue;
+
+    const nearestX = clamp(ball.x, b.x, b.x + b.w);
+    const nearestY = clamp(ball.y, b.y, b.y + b.h);
+    const dx = ball.x - nearestX;
+    const dy = ball.y - nearestY;
+
+    if (dx * dx + dy * dy > ball.r * ball.r) continue;
+
+    // Collision! Decide which face was hit.
+    if (dx === 0 && dy === 0) {
+      // Centre is inside the brick (very rare) – push out vertically
+      if (ball.vy > 0) { ball.y = b.y - ball.r; ball.vy = -Math.abs(ball.vy); }
+      else { ball.y = b.y + b.h + ball.r; ball.vy = Math.abs(ball.vy); }
+    } else if (Math.abs(dx) > Math.abs(dy)) {
+      // Side hit
+      if (dx > 0) { ball.x = b.x + b.w + ball.r; ball.vx = Math.abs(ball.vx); }
+      else { ball.x = b.x - ball.r; ball.vx = -Math.abs(ball.vx); }
+    } else {
+      // Top / bottom hit
+      if (dy > 0) { ball.y = b.y + b.h + ball.r; ball.vy = Math.abs(ball.vy); }
+      else { ball.y = b.y - ball.r; ball.vy = -Math.abs(ball.vy); }
+    }
+
+    b.alive = false;
+    game.fading.push({ brick: b, t: 0 });
+    game.score += SHELVES[b.row].points;
+
+    // Gentle speed-up keeps the game interesting
+    ball.speed = Math.min(BALL_MAX_SPEED, ball.speed + BALL_SPEEDUP);
+    const mag = Math.hypot(ball.vx, ball.vy) || 1;
+    ball.vx = ball.vx / mag * ball.speed;
+    ball.vy = ball.vy / mag * ball.speed;
+    normalizeVelocity();
+
+    updateHUD();
+    return true;
+  }
+  return false;
+}
+
+function remainingBricks() {
+  let n = 0;
+  for (let i = 0; i < game.bricks.length; i++) if (game.bricks[i].alive) n++;
+  return n;
+}
+
+function loseLife() {
+  game.lives -= 1;
+  updateHUD();
+  if (game.lives <= 0) {
+    endGame(false);
+  } else {
+    placeBallOnPaddle();
+    game.state = "ready";
+    game.messageTimer = 1.6;
+  }
+}
+
+/* =========================================================================
+   9. GAME END → SAVE SCORE → SHOW RESULT
+   ========================================================================= */
+function endGame(won) {
+  if (game.state === "over" || game.state === "win") return;   // guard double calls
+  game.state = won ? "win" : "over";
+  keys.left = keys.right = false;
+
+  resultTitle.dataset.i18n = won ? "winTitle" : "gameOverTitle";
+  resultMsg.dataset.i18n = won ? "winMsg" : "gameOverMsg";
+  resultTitle.textContent = t(resultTitle.dataset.i18n);
+  resultMsg.textContent = t(resultMsg.dataset.i18n);
+  resultScore.textContent = String(game.score);
+
+  setSaveStatus("saving");
+  showOverlay(resultOverlay);
+  setTimeout(function () {
+    const btn = document.getElementById("btnPlayAgain");
+    if (btn) btn.focus({ preventScroll: true });
+  }, 50);
+
+  if (!game.scoreSaved) {
+    game.scoreSaved = true;
+    Leaderboard.save(game.playerName, game.score)
+      .then(function (where) {
+        setSaveStatus(where === "firebase" ? "savedOnline" : (where === "fallback" ? "saveFallback" : "savedLocal"));
+        return refreshLeaderboard();
+      })
+      .catch(function () { setSaveStatus("saveFallback"); });
+  }
+}
+
+function setSaveStatus(key) {
+  saveStatus.dataset.i18n = key;
+  saveStatus.textContent = t(key);
+}
+
+/* =========================================================================
+   10. RENDERING
+   ========================================================================= */
+function roundRect(x, y, w, h, r) {
+  const rr = Math.min(r, w / 2, h / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + rr, y);
+  ctx.lineTo(x + w - rr, y);
+  ctx.arcTo(x + w, y, x + w, y + rr, rr);
+  ctx.lineTo(x + w, y + h - rr);
+  ctx.arcTo(x + w, y + h, x + w - rr, y + h, rr);
+  ctx.lineTo(x + rr, y + h);
+  ctx.arcTo(x, y + h, x, y + h - rr, rr);
+  ctx.lineTo(x, y + rr);
+  ctx.arcTo(x, y, x + rr, y, rr);
+  ctx.closePath();
+}
+
+function drawBackground() {
+  // Soft studio wall
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, "#F7F1EB");
+  g.addColorStop(1, "#ECE0D4");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, H);
+
+  // Diffuse vanity light from the top
+  const light = ctx.createRadialGradient(W / 2, -60, 20, W / 2, -60, 520);
+  light.addColorStop(0, "rgba(255,255,255,0.75)");
+  light.addColorStop(1, "rgba(255,255,255,0)");
+  ctx.fillStyle = light;
+  ctx.fillRect(0, 0, W, H);
+
+  // Shelf title
+  ctx.fillStyle = "rgba(107,78,66,0.75)";
+  ctx.font = '400 26px "Italiana", "Didot", serif';
+  ctx.textAlign = "left";
+  ctx.textBaseline = "alphabetic";
+  ctx.fillText(t("shelfTitle"), BRICK_LEFT, 54);
+
+  ctx.font = '400 12px "Jost", sans-serif';
+  ctx.textAlign = "right";
+  ctx.fillStyle = "rgba(107,78,66,0.6)";
+  ctx.fillText(remainingBricks() + " / " + (ROWS * COLS), W - BRICK_LEFT, 52);
+
+  // Wooden-ish shelf boards under every row
+  for (let r = 0; r < ROWS; r++) {
+    const y = BRICK_TOP + r * (BRICK_H + BRICK_GAP_Y) + BRICK_H + 4;
+    ctx.fillStyle = "rgba(107,78,66,0.16)";
+    ctx.fillRect(BRICK_LEFT - 14, y, W - 2 * (BRICK_LEFT - 14), 3);
+    ctx.fillStyle = "rgba(255,255,255,0.6)";
+    ctx.fillRect(BRICK_LEFT - 14, y + 3, W - 2 * (BRICK_LEFT - 14), 1);
+  }
+
+  // Floor line where the paddle lives
+  ctx.fillStyle = "rgba(107,78,66,0.12)";
+  ctx.fillRect(0, H - 14, W, 1);
+}
+
+/* Each product gets its own little packaging silhouette */
+function drawProduct(b, alpha, scale) {
+  const s = SHELVES[b.row];
+  const cx = b.x + b.w / 2;
+  const cy = b.y + b.h / 2;
+
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.translate(cx, cy);
+  ctx.scale(scale, scale);
+  ctx.translate(-cx, -cy);
+
+  const bodyY = b.y + 6;
+  const bodyH = b.h - 6;
+  let radius = 8;
+  let capW = 0;
+  let capH = 7;
+
+  switch (b.product) {
+    case "SERUM": capW = 12; capH = 9; radius = 9; break;   // dropper
+    case "CREAM": capW = b.w - 10; capH = 7; radius = 6; break; // jar lid
+    case "LIP":   capW = 22; capH = 8; radius = 4; break;   // lipstick bullet
+    case "MIST":  capW = 9;  capH = 8; radius = 10; break;  // spray nozzle
+    case "MASK":  capW = 0; radius = 3; break;              // sheet sachet
+    case "GLOW":  capW = 0; radius = 16; break;             // compact
+    case "TONE":  capW = 16; capH = 7; radius = 7; break;   // toner bottle
+    case "CARE":  capW = 26; capH = 6; radius = 12; break;  // tube cap
+  }
+
+  // Soft drop shadow on the shelf
+  ctx.shadowColor = "rgba(74,52,43,0.22)";
+  ctx.shadowBlur = 8;
+  ctx.shadowOffsetY = 3;
+
+  // Cap / lid
+  if (capW > 0) {
+    ctx.fillStyle = s.cap;
+    if (b.product === "LIP") {
+      // rounded bullet shape
+      roundRect(cx - capW / 2, b.y + 6 - capH, capW, capH + 4, 6);
+    } else {
+      roundRect(cx - capW / 2, b.y + 6 - capH, capW, capH + 3, 2.5);
+    }
+    ctx.fill();
+  }
+
+  // Body
+  ctx.fillStyle = s.fill;
+  roundRect(b.x, bodyY, b.w, bodyH, radius);
+  ctx.fill();
+  ctx.shadowColor = "transparent";
+
+  // Fine outline for light products
+  if (b.row >= 3) {
+    ctx.strokeStyle = "rgba(107,78,66,0.25)";
+    ctx.lineWidth = 1;
+    roundRect(b.x + 0.5, bodyY + 0.5, b.w - 1, bodyH - 1, radius);
+    ctx.stroke();
+  }
+
+  // Glossy highlight
+  const gloss = ctx.createLinearGradient(b.x, bodyY, b.x, bodyY + bodyH);
+  gloss.addColorStop(0, "rgba(255,255,255,0.28)");
+  gloss.addColorStop(0.5, "rgba(255,255,255,0)");
+  ctx.fillStyle = gloss;
+  roundRect(b.x + 3, bodyY + 2, b.w - 6, bodyH / 2, Math.max(radius - 2, 2));
+  ctx.fill();
+
+  // Mask sachet: crimped top edge
+  if (b.product === "MASK") {
+    ctx.strokeStyle = s.text;
+    ctx.globalAlpha = alpha * 0.35;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let x = b.x + 4; x <= b.x + b.w - 4; x += 4) {
+      ctx.moveTo(x, bodyY + 3);
+      ctx.lineTo(x, bodyY + 6);
+    }
+    ctx.stroke();
+    ctx.globalAlpha = alpha;
+  }
+
+  // Label
+  ctx.fillStyle = s.text;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.font = '500 11px "Jost", sans-serif';
+  if ("letterSpacing" in ctx) ctx.letterSpacing = "2px";
+  ctx.fillText(b.product, cx + 1, bodyY + bodyH / 2 + 1);
+  if ("letterSpacing" in ctx) ctx.letterSpacing = "0px";
+
+  // Hairline under the label (editorial packaging detail)
+  ctx.globalAlpha = alpha * 0.45;
+  ctx.fillRect(cx - 8, bodyY + bodyH / 2 + 10, 16, 1);
+
+  ctx.restore();
+}
+
+function drawBricks(dt) {
+  for (let i = 0; i < game.bricks.length; i++) {
+    const b = game.bricks[i];
+    if (b.alive) drawProduct(b, 1, 1);
+  }
+  // Disappear animation: fade + slight lift
+  for (let i = game.fading.length - 1; i >= 0; i--) {
+    const f = game.fading[i];
+    f.t += dt;
+    const p = f.t / 0.32;
+    if (p >= 1) { game.fading.splice(i, 1); continue; }
+    drawProduct(f.brick, 1 - p, 1 + p * 0.12);
+  }
+}
+
+function drawPaddle() {
+  // A slim compact-mirror bar
+  ctx.save();
+  ctx.shadowColor = "rgba(28,22,21,0.3)";
+  ctx.shadowBlur = 12;
+  ctx.shadowOffsetY = 4;
+  ctx.fillStyle = "#1C1615";
+  roundRect(paddle.x, paddle.y, paddle.w, paddle.h, 7);
+  ctx.fill();
+  ctx.restore();
+
+  // Rose-gold inlay
+  const inlay = ctx.createLinearGradient(paddle.x, 0, paddle.x + paddle.w, 0);
+  inlay.addColorStop(0, "#B88A86");
+  inlay.addColorStop(0.5, "#EBD3C7");
+  inlay.addColorStop(1, "#B88A86");
+  ctx.fillStyle = inlay;
+  roundRect(paddle.x + 10, paddle.y + 5, paddle.w - 20, 3, 1.5);
+  ctx.fill();
+}
+
+function drawBall() {
+  // Pearl
+  ctx.save();
+  ctx.shadowColor = "rgba(74,52,43,0.35)";
+  ctx.shadowBlur = 8;
+  ctx.shadowOffsetY = 3;
+  const g = ctx.createRadialGradient(ball.x - 3, ball.y - 3, 1, ball.x, ball.y, ball.r);
+  g.addColorStop(0, "#FFFFFF");
+  g.addColorStop(0.55, "#F3E6DE");
+  g.addColorStop(1, "#C9A79C");
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawCenterText(text, y, size) {
+  ctx.save();
+  ctx.font = '400 ' + size + 'px "Jost", "Pretendard", "Apple SD Gothic Neo", "PingFang SC", sans-serif';
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  const w = ctx.measureText(text).width + 40;
+  ctx.fillStyle = "rgba(255,252,248,0.82)";
+  roundRect(W / 2 - w / 2, y - 20, w, 40, 20);
+  ctx.fill();
+  ctx.strokeStyle = "rgba(107,78,66,0.2)";
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  ctx.fillStyle = "#4A3B35";
+  ctx.fillText(text, W / 2, y + 1);
+  ctx.restore();
+}
+
+function render(dt) {
+  ctx.clearRect(0, 0, W, H);
+  drawBackground();
+  drawBricks(dt);
+  drawPaddle();
+  drawBall();
+
+  if (game.state === "ready") {
+    if (game.messageTimer > 0) {
+      drawCenterText(t("lifeLost"), 410, 16);
+    } else {
+      drawCenterText(t("launchHint"), 410, 16);
+    }
+  }
+}
+
+/* =========================================================================
+   11. MAIN LOOP – started exactly once, so repeated Start clicks can never
+       create multiple animation loops.
+   ========================================================================= */
+let lastTime = 0;
+let loopStarted = false;
+
+function frame(now) {
+  if (!lastTime) lastTime = now;
+  const dt = Math.min((now - lastTime) / 1000, 1 / 30);   // clamp big jumps (tab switch)
+  lastTime = now;
+
+  if (game.state === "ready" || game.state === "playing") {
+    updatePaddle(dt);
+  }
+  if (game.state === "ready") {
+    placeBallOnPaddle();
+    if (game.messageTimer > 0) game.messageTimer = Math.max(0, game.messageTimer - dt);
+  } else if (game.state === "playing") {
+    updateBall(dt);
+  }
+
+  render(dt);
+  requestAnimationFrame(frame);
+}
+
+function startLoop() {
+  if (loopStarted) return;
+  loopStarted = true;
+  requestAnimationFrame(frame);
+}
+
+/* =========================================================================
+   12. INPUT
+   ========================================================================= */
+const GAME_KEYS = ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Space"];
+
+window.addEventListener("keydown", function (e) {
+  // While typing a name, let the input behave normally
+  if (e.target === nameInput) {
+    if (e.key === "Enter") { e.preventDefault(); startFromWelcome(); }
+    return;
+  }
+
+  // Stop arrow keys / space from scrolling the page
+  if (GAME_KEYS.indexOf(e.code) !== -1) e.preventDefault();
+
+  if (e.code === "ArrowLeft" || e.code === "KeyA") keys.left = true;
+  if (e.code === "ArrowRight" || e.code === "KeyD") keys.right = true;
+  if (e.code === "Space" && !e.repeat) launchBall();
+}, { passive: false });
+
+window.addEventListener("keyup", function (e) {
+  if (e.code === "ArrowLeft" || e.code === "KeyA") keys.left = false;
+  if (e.code === "ArrowRight" || e.code === "KeyD") keys.right = false;
+});
+
+window.addEventListener("blur", function () { keys.left = keys.right = false; });
+
+/* Convert a screen position into internal 800x600 coordinates */
+function toGameX(clientX) {
+  const rect = canvas.getBoundingClientRect();
+  return (clientX - rect.left) * (W / rect.width);
+}
+
+function movePaddleTo(clientX) {
+  if (game.state !== "ready" && game.state !== "playing") return;
+  paddle.x = clamp(toGameX(clientX) - paddle.w / 2, 0, W - paddle.w);
+}
+
+/* Pointer events cover mouse, pen and touch */
+canvas.addEventListener("pointermove", function (e) { movePaddleTo(e.clientX); });
+
+canvas.addEventListener("pointerdown", function (e) {
+  movePaddleTo(e.clientX);
+  if (e.pointerType !== "mouse") {
+    try { canvas.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+  }
+  launchBall();
+});
+
+/* =========================================================================
+   13. UI ACTIONS
+   ========================================================================= */
+function showOverlay(el) { el.classList.remove("hidden"); el.setAttribute("aria-hidden", "false"); }
+function hideOverlay(el) { el.classList.add("hidden"); el.setAttribute("aria-hidden", "true"); }
+
+/* Name sanitising: trim, remove control chars, collapse spaces, max 12 chars */
+function sanitizeName(raw) {
+  return Array.from(String(raw || "")
+    .replace(/[\u0000-\u001F\u007F<>]/g, "")
+    .replace(/\s+/g, " ")
+    .trim())
+    .slice(0, 12)
+    .join("");
+}
+
+function showWelcome() {
+  game.state = "idle";
+  keys.left = keys.right = false;
+  hideOverlay(resultOverlay);
+  showOverlay(welcomeOverlay);
+  nameError.textContent = "";
+  setTimeout(function () { nameInput.focus({ preventScroll: true }); }, 60);
+}
+
+function startFromWelcome() {
+  const name = sanitizeName(nameInput.value);
+  if (!name) {
+    nameError.textContent = t("nameError");
+    nameInput.focus();
+    return;
+  }
+  nameError.textContent = "";
+  nameInput.value = name;
+  game.playerName = name;
+  storageSet(LAST_NAME_KEY, name);
+  nameInput.blur();
+  resetGame();
+}
+
+/* Remove focus from clicked buttons so the Space key doesn't "click" them again */
+function onButton(id, handler) {
+  document.getElementById(id).addEventListener("click", function (e) {
+    handler();
+    e.currentTarget.blur();
+  });
+}
+
+onButton("btnStart", startFromWelcome);
+
+onButton("btnStartHud", function () {
+  if (!game.playerName || game.state === "idle") { showWelcome(); return; }
+  if (game.state === "ready") { launchBall(); return; }
+  if (game.state === "over" || game.state === "win") { resetGame(); }
+  // while playing: nothing happens (prevents duplicate starts)
+});
+
+onButton("btnRestart", function () {
+  if (!game.playerName || game.state === "idle") { showWelcome(); return; }
+  resetGame();
+});
+
+onButton("btnPlayAgain", function () { resetGame(); });
+onButton("btnChangePlayer", showWelcome);
+
+nameInput.addEventListener("input", function () {
+  if (nameError.textContent && nameInput.value.trim()) nameError.textContent = "";
+});
+
+document.querySelectorAll(".lang-switch button").forEach(function (btn) {
+  btn.addEventListener("click", function () {
+    applyLanguage(btn.dataset.lang);
+    renderLeaderboard(lastEntries);   // re-render empty-state text etc.
+  });
+});
+
+/* =========================================================================
+   14. LEADERBOARD (localStorage fallback + Firebase)
+   ========================================================================= */
+let lastEntries = [];
+
+function isFirebaseConfigured() {
+  return Object.keys(firebaseConfig).every(function (k) {
+    const v = String(firebaseConfig[k] || "");
+    return v.length > 0 && v.indexOf("YOUR_") === -1;
+  });
+}
+
+function sortEntries(list) {
+  return list
+    .filter(function (e) { return e && typeof e.score === "number" && isFinite(e.score); })
+    .sort(function (a, b) {
+      if (b.score !== a.score) return b.score - a.score;
+      return (a.timestamp || 0) - (b.timestamp || 0);   // earlier record wins ties
+    });
+}
+
+/* ---------- Local storage leaderboard ---------- */
+const LocalBoard = {
+  read: function () {
+    try {
+      const data = JSON.parse(storageGet(LOCAL_BOARD_KEY) || "[]");
+      return Array.isArray(data) ? data : [];
+    } catch (e) { return []; }
+  },
+  save: function (playerName, score) {
+    const list = LocalBoard.read();
+    list.push({ playerName: playerName, score: score, timestamp: Date.now() });
+    storageSet(LOCAL_BOARD_KEY, JSON.stringify(sortEntries(list).slice(0, 50)));
+    return Promise.resolve("local");
+  },
+  top10: function () {
+    return Promise.resolve(sortEntries(LocalBoard.read()).slice(0, 10));
+  }
+};
+
+/* =========================================================================
+   ★★★ Firebase连接代码从这里开始 ★★★
+   (Firebase connection code starts here / Firebase 연결 코드 시작)
+   Uses the Firebase compat SDK, loaded only when firebaseConfig is filled in.
+   ========================================================================= */
+const FIREBASE_VERSION = "10.12.2";
+let firebaseDb = null;
+
+function loadScript(src) {
+  return new Promise(function (resolve, reject) {
+    const s = document.createElement("script");
+    s.src = src;
+    s.async = true;
+    s.onload = resolve;
+    s.onerror = function () { reject(new Error("Failed to load " + src)); };
+    document.head.appendChild(s);
+  });
+}
+
+function withTimeout(promise, ms) {
+  return Promise.race([
+    promise,
+    new Promise(function (_, reject) { setTimeout(function () { reject(new Error("timeout")); }, ms); })
+  ]);
+}
+
+async function initFirebase() {
+  if (!isFirebaseConfigured()) return false;
+  try {
+    const base = "https://www.gstatic.com/firebasejs/" + FIREBASE_VERSION + "/";
+    await loadScript(base + "firebase-app-compat.js");
+    await loadScript(base + "firebase-database-compat.js");
+    const app = window.firebase.apps.length
+      ? window.firebase.app()
+      : window.firebase.initializeApp(firebaseConfig);
+    firebaseDb = window.firebase.database(app);
+    // Quick test read so we know the connection really works
+    await withTimeout(firebaseDb.ref("leaderboard").limitToLast(1).once("value"), 8000);
+    return true;
+  } catch (err) {
+    console.warn("[Beauty Brick Breaker] Firebase unavailable, using localStorage instead.", err);
+    firebaseDb = null;
+    return false;
+  }
+}
+
+const FirebaseBoard = {
+  save: function (playerName, score) {
+    return withTimeout(
+      firebaseDb.ref("leaderboard").push({
+        playerName: playerName,
+        score: score,
+        timestamp: Date.now()
+      }),
+      8000
+    ).then(function () { return "firebase"; });
+  },
+  top10: function () {
+    return withTimeout(
+      firebaseDb.ref("leaderboard").orderByChild("score").limitToLast(10).once("value"),
+      8000
+    ).then(function (snap) {
+      const list = [];
+      snap.forEach(function (child) {
+        const v = child.val() || {};
+        list.push({
+          playerName: sanitizeName(v.playerName) || "—",
+          score: Number(v.score) || 0,
+          timestamp: Number(v.timestamp) || 0
+        });
+      });
+      return sortEntries(list).slice(0, 10);
+    });
+  }
+};
+/* ===================== Firebase连接代码到这里结束 ===================== */
+
+/* Unified leaderboard API used by the game */
+const Leaderboard = {
+  mode: "local",      // "local" | "firebase"
+  save: function (playerName, score) {
+    if (Leaderboard.mode === "firebase" && firebaseDb) {
+      return FirebaseBoard.save(playerName, score).catch(function () {
+        return LocalBoard.save(playerName, score).then(function () { return "fallback"; });
+      });
+    }
+    return LocalBoard.save(playerName, score);
+  },
+  top10: function () {
+    if (Leaderboard.mode === "firebase" && firebaseDb) {
+      return FirebaseBoard.top10().catch(function () { return LocalBoard.top10(); });
+    }
+    return LocalBoard.top10();
+  }
+};
+
+/* Render rows with createElement + textContent (never innerHTML for names) */
+function renderLeaderboard(entries) {
+  lastEntries = entries || [];
+  rankBody.replaceChildren();
+
+  if (!lastEntries.length) {
+    rankEmpty.style.display = "";
+    rankEmpty.dataset.i18n = "noScores";
+    rankEmpty.textContent = t("noScores");
+    return;
+  }
+  rankEmpty.style.display = "none";
+
+  lastEntries.forEach(function (entry, i) {
+    const tr = document.createElement("tr");
+    if (i < 3) tr.className = "top top-" + (i + 1);
+    if (entry.playerName === game.playerName && entry.score === game.score && game.scoreSaved) {
+      tr.className += " me";
+    }
+
+    const tdRank = document.createElement("td");
+    tdRank.className = "rank-no";
+    tdRank.textContent = String(i + 1).padStart(2, "0");
+
+    const tdName = document.createElement("td");
+    tdName.className = "rank-name";
+    tdName.textContent = entry.playerName;
+    tdName.title = entry.playerName;
+
+    const tdScore = document.createElement("td");
+    tdScore.className = "rank-score";
+    tdScore.textContent = String(entry.score);
+
+    tr.appendChild(tdRank);
+    tr.appendChild(tdName);
+    tr.appendChild(tdScore);
+    rankBody.appendChild(tr);
+  });
+}
+
+function refreshLeaderboard() {
+  return Leaderboard.top10()
+    .then(renderLeaderboard)
+    .catch(function () { renderLeaderboard([]); });
+}
+
+function updateModeUI() {
+  const online = Leaderboard.mode === "firebase";
+  modeBadge.dataset.i18n = online ? "modeOnline" : "modeLocal";
+  modeBadge.textContent = t(modeBadge.dataset.i18n);
+  modeBadge.classList.toggle("online", online);
+  rankingDesc.dataset.i18n = online ? "rankingOnline" : "rankingLocal";
+  rankingDesc.textContent = t(rankingDesc.dataset.i18n);
+}
+
+/* =========================================================================
+   15. INIT
+   ========================================================================= */
+function init() {
+  setupCanvas();
+  window.addEventListener("resize", setupCanvas);
+
+  // Restore saved language (default: Korean)
+  const savedLang = storageGet(LANG_KEY);
+  applyLanguage(savedLang && I18N[savedLang] ? savedLang : "ko");
+
+  // Prefill the last used name
+  const lastName = storageGet(LAST_NAME_KEY);
+  if (lastName) nameInput.value = sanitizeName(lastName);
+
+  buildBricks();
+  placeBallOnPaddle();
+  updateHUD();
+  updateModeUI();
+
+  // Show local ranking immediately, then switch to Firebase if it connects
+  refreshLeaderboard();
+  initFirebase().then(function (ok) {
+    if (ok) {
+      Leaderboard.mode = "firebase";
+      updateModeUI();
+      refreshLeaderboard();
+    }
+  });
+
+  startLoop();
+  showWelcome();
+}
+
+init();
+</script>
+</body>
+</html>
